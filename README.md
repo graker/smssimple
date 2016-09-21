@@ -1,2 +1,5 @@
-# smssimple
-Drupal 7 integration of SMSSimple API
+# SMSSimple API integration
+
+Drupal 7 module integrating API of [SMSSimple](http://www.smsimple.ru/) message service.
+
+Code and description are coming soon.
