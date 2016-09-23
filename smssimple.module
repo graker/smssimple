@@ -1,0 +1,206 @@
+<?php
+
+
+/**
+ * Implements hook_menu().
+ */
+function smssimple_menu() {
+  $items = array();
+
+  //config page
+  $items['admin/config/services/smssimple'] = array(
+    'title' => 'SMS Simple',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('_smssimple_admin_page'),
+    'access arguments' => array('administer smssimple'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  //test send form
+  $items['admin/config/services/smssimple/test'] = array(
+    'title' => 'Test send',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('_smssimple_test_send_form'),
+    'access arguments' => array('administer smssimple'),
+    'type' => MENU_LOCAL_ACTION,
+  );
+
+  return $items;
+} // smssimple_menu
+
+
+/**
+ *
+ * hook_permission() implementation
+ *
+ * @return array
+ */
+function smssimple_permission() {
+  return array(
+    'administer smssimple' => array(
+      'title' => t('Administer SMSSimple'),
+      'description' => t('Administer SMS gateway'),
+    ),
+  );
+} // smssimple_permission
+
+
+/**
+ *
+ * Admin form for settings
+ *
+ * @param array $form
+ * @param array $form_state
+ * @return array
+ */
+function _smssimple_admin_page($form, &$form_state) {
+  $form['smssimple_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('API URL'),
+    '#default_value' => variable_get('smssimple_url', 'http://api.smsimple.ru/'),
+  );
+
+  $form['smssimple_login'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Login'),
+    '#default_value' => variable_get('smssimple_login', ''),
+  );
+
+  $form['smssimple_password'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Password'),
+    '#default_value' => variable_get('smssimple_password', ''),
+  );
+
+  $credentials = _smssimple_get_credentials();
+
+  if ($credentials['username'] && $credentials['password']) {
+    try {
+      $service = new SMSimple($credentials);
+      $service->connect();
+      $origins = $service->origins();
+
+      $origin_options = array(
+        '0' => t('Random number'),
+      );
+      foreach ($origins as $origin) {
+        $origin_options[$origin['id']] = $origin['title'];
+      }
+
+      $form['smssimple_default_origin'] = array(
+        '#type' => 'select',
+        '#title' => t('Default origin'),
+        '#options' => $origin_options,
+        '#default_value' => variable_get('smssimple_default_origin', 0),
+      );
+
+      drupal_set_message(t('Connection to SMSSimple server is all right'));
+    } catch (SMSimpleException $e) {
+      drupal_set_message($e->getMessage(), 'error');
+    }
+  } else {
+    drupal_set_message(t('To check SMSSimple connection, provide your login and password'), 'warning');
+  }
+
+  return system_settings_form($form);
+} // _smssimple_admin_page
+
+
+/**
+ *
+ * Generates form to send a test sms (or many ones)
+ *
+ * @param array $form
+ * @param array $form_state
+ * @return array mixed
+ */
+function _smssimple_test_send_form($form, &$form_state) {
+  $form['phones'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Phones'),
+    '#description' => t('Type in one or more phone numbers separated by commas. E.g. "+79031321232, 88007899878". Note that phones won\'t be validated and will be passed to sending function as is.'),
+    '#default_value' => '',
+    '#required' => TRUE,
+  );
+
+  $form['message'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Message'),
+    '#description' => t('Type in the message to send'),
+    '#default_value' => '',
+    '#required' => TRUE,
+  );
+
+  $form['send'] = array(
+    '#type' => 'submit',
+    '#value' => t('Send'),
+  );
+
+  return $form;
+} // _smssimple_test_send_form
+
+
+/**
+ *
+ * Submits test form and send SMS to given numbers
+ *
+ * @param $form
+ * @param $form_state
+ */
+function _smssimple_test_send_form_submit($form, &$form_state) {
+  $phones = array();
+  foreach (explode(',', $form_state['values']['phones']) as $phone) {
+    $phones[] = trim($phone);
+  }
+
+  $response = smssimple_send_sms($phones, $form_state['values']['message'], TRUE);
+  if ($response) {
+    drupal_set_message(t('Message is successfully sent'));
+  } else {
+    drupal_set_message(t('Error sending message, check watchdog'), 'error');
+  }
+} // _smssimple_test_send_form_submit
+
+
+/**
+ *
+ * Sends $message to all of phones in $phones
+ * Returns FALSE if error
+ *
+ * @param array $phones
+ * @param string $message
+ * @param bool $report whether to display error message
+ * @return int|array code or array of codes to use to check send status, 0 if error
+ */
+function smssimple_send_sms($phones, $message, $report = FALSE) {
+  $service = new SMSimple(_smssimple_get_credentials());
+  $phones_count = count($phones);
+  $multiple = ($phones_count > 1);
+
+  try {
+    $service->connect();
+    return $service->send(variable_get('smssimple_default_origin', 0), $phones, $message, $multiple);
+  } catch (SMSimpleException $e) {
+    if ($report) {
+      drupal_set_message($e->getMessage(), 'error');
+      return 0;
+    }
+  }
+
+  return TRUE;
+} // smssimple_send_sms
+
+
+/**
+ *
+ * Returns array with SMSSimple url, login and password to use the service
+ *
+ * @return array
+ */
+function _smssimple_get_credentials() {
+  return array(
+    'url' => variable_get('smssimple_url', 'http://api.smsimple.ru/'),
+    'username' => variable_get('smssimple_login', ''),
+    'password' => variable_get('smssimple_password', ''),
+  );
+} // _smssimple_get_credentials

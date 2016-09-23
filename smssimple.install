@@ -1,0 +1,15 @@
+<?php
+
+/**
+ * Module install file
+ */
+
+
+/**
+ * hook_uninstall() implementation
+ */
+function smssimple_uninstall() {
+  variable_del('smssimple_url');
+  variable_del('smssimple_login');
+  variable_del('smssimple_password');
+} // smssimple_uninstall
