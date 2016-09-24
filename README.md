@@ -15,7 +15,7 @@ Code in `api` directory is provided by SMSSimple with little modifications made 
 4. Use the `smssimple_send_sms()` function to send SMS to given array of phones. Example:
 
 ```
-smssimple_send_sms(array(89012345678, 89263211232), 'Hello!', TRUE);
+smssimple_send_sms(array('89012345678', '89263211232'), 'Hello!', TRUE);
 ```
 
 This will send the message to two phone numbers and will report any errors on the way.
