@@ -78,6 +78,17 @@ function _smssimple_admin_page($form, &$form_state) {
     try {
       $service = new SMSimple($credentials);
       $service->connect();
+
+      // get profile info
+      $profile = $service->get_profile();
+
+      $form['info'] = array(
+        '#type' => 'markup',
+        '#markup' => _smssimple_render_profile_info($profile),
+        '#weight' => -10,
+      );
+
+      // get origins
       $origins = $service->origins();
 
       $origin_options = array(
@@ -204,3 +215,24 @@ function _smssimple_get_credentials() {
     'password' => variable_get('smssimple_password', ''),
   );
 } // _smssimple_get_credentials
+
+
+/**
+ *
+ * Generates profile info to be displayed at the admin page
+ *
+ * @param array $profile - profile values returned from service
+ * @return string rendered info
+ */
+function _smssimple_render_profile_info($profile) {
+  $output = '
+    <div class="balance-info">
+        <h3>' . t('Service account information') . '</h3>
+        <strong>' . $profile['title'] . '</strong><br/>
+        <strong>' . t('Phone: ') . '</strong>' . $profile['phone'] . '<br/>
+        <strong>' . t('Balance: ') . '</strong>' . $profile['balance'] . '<br/>
+    </div>
+  ';
+
+  return $output;
+} // _smssimple_render_profile_info

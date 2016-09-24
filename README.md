@@ -1,8 +1,8 @@
-# SMSSimple API integration
+# SMSimple API integration
 
-Drupal 7 module integrating API of [SMSSimple](http://www.smsimple.ru/) message service.
+Drupal 7 module integrating [SMSimple](http://www.smsimple.ru/) message service API.
 
-Code in `api` directory is provided by SMSSimple with little modifications made here.
+Code in `api` directory is provided by SMSSimple with little to no modifications made here.
 
 ## Usage
 
@@ -10,7 +10,8 @@ Code in `api` directory is provided by SMSSimple with little modifications made 
 
 2. Go to settings at `admin/config/services/smssimple`, provide your login and password to SMSSimple site, save the form.
 
-3. If you have origins set, now you can select the default one.
+3. If you have origins set, they will be loaded so you could select the default origin to use. 
+Basic profile info (name, phone, balance) will be loaded from SMSimple service and displayed above the settings form.
  
 4. Use the `smssimple_send_sms()` function to send SMS to given array of phones. Example:
 
