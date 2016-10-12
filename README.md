@@ -20,3 +20,7 @@ smssimple_send_sms(array('89012345678', '89263211232'), 'Hello!', TRUE);
 ```
 
 This will send the message to two phone numbers and will report any errors on the way.
+
+* first argument is an array of phone numbers
+* second argument is a message text
+* third argument is a boolean, if TRUE error messages will be displayed using `drupal_set_message()`, if FALSE messages will be ignored
